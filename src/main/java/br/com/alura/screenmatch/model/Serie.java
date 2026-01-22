@@ -1,5 +1,7 @@
 package br.com.alura.screenmatch.model;
 
+import br.com.alura.screenmatch.service.ConsultaChatGPT;
+import br.com.alura.screenmatch.service.traducao.ConsultaMyMemory;
 import com.fasterxml.jackson.annotation.JsonAlias;
 
 import java.util.Optional;
@@ -22,7 +24,7 @@ public class Serie {
         this.genero = Categoria.fromString(dadosSeries.genero().split(",")[0].trim());
         this.atores = dadosSeries.atores();
         this.poster = dadosSeries.poster();
-        this.sinopse = dadosSeries.sinopse();
+        this.sinopse = ConsultaMyMemory.obterTraducao(dadosSeries.sinopse()).trim();
     }
 
     public String getTilulo() {
