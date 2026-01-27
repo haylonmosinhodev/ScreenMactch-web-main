@@ -1,16 +1,16 @@
 package br.com.alura.screenmatch.principal;
 
+import br.com.alura.screenmatch.model.Episodio;
 import br.com.alura.screenmatch.model.Serie;
 import br.com.alura.screenmatch.model.dadosSeries;
 import br.com.alura.screenmatch.model.dadosTemporada;
+import br.com.alura.screenmatch.repository.SerieRepository;
 import br.com.alura.screenmatch.service.consumoApi;
 import br.com.alura.screenmatch.service.converterDados;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.stream.Collectors;
+
 
 public class Principal {
 
@@ -22,6 +22,14 @@ public class Principal {
     private converterDados conversor = new converterDados();
 
     private List<dadosSeries> dadosSeries = new ArrayList<>();
+
+    private SerieRepository repositorio;
+    private List<Serie> series = new ArrayList<>();
+
+    public Principal(SerieRepository repositorio) {
+        this.repositorio = repositorio;
+    }
+
 
     public void exibeMenu() {
 
@@ -65,7 +73,9 @@ public class Principal {
 
     private void buscarSerieWeb() {
         dadosSeries dados = getDadosSerie();
-        dadosSeries.add(dados);
+        //dadosSeries.add(dados);
+        Serie serie = new Serie(dados);
+        repositorio.save(serie);
         System.out.println(dados);
         System.out.println();
         System.out.println();
@@ -80,22 +90,44 @@ public class Principal {
     }
 
     private void buscarEpisodioPorSerie() {
-        dadosSeries dadosSerie = getDadosSerie();
-        List<dadosTemporada> listaTemporadas = new ArrayList<>();
 
-        for (int i = 1; i < dadosSerie.totalTemporadas(); i++) {
-            var json = consumoApi.obterDados(ENDERECO + dadosSerie.tilulo().replace(" ", "+") + "&season=" + i + APIKEY);
-            dadosTemporada dadosTemporada = conversor.obterDados(json, dadosTemporada.class);
-            listaTemporadas.add(dadosTemporada);
+        listarSeriesBuscadas();
+        System.out.println("Escolha uma sério pelo nome: ");
+
+        var nomeSerie = sc.nextLine();
+        Optional<Serie> serie = series.stream().filter(s -> s.getTilulo().toLowerCase().contains(nomeSerie.toLowerCase()))
+                .findFirst();
+
+        if(serie.isPresent()){
+            var serieEncontrada = serie.get();
+            List<dadosTemporada> listaTemporadas = new ArrayList<>();
+
+            for (int i = 1; i < serieEncontrada.getTotalTeporadas(); i++) {
+                var json = consumoApi.obterDados(ENDERECO + serieEncontrada.getTilulo().replace(" ", "+") + "&season=" + i + APIKEY);
+                dadosTemporada dadosTemporada = conversor.obterDados(json, dadosTemporada.class);
+                listaTemporadas.add(dadosTemporada);
+            }
+            listaTemporadas.forEach(System.out::println);
+
+            List<Episodio> episodios = listaTemporadas.stream().flatMap(d -> d.episodios().stream()
+                            .map(e -> new Episodio(d.numero(), e)))
+                    .collect(Collectors.toList());
+            serieEncontrada.setEpisodios(episodios);
+            repositorio.save(serieEncontrada);
+
+        } else{
+            System.out.println("Série nao encontrada!");
         }
 
-        listaTemporadas.forEach(System.out::println);
-    }
+
+        }
+
+
+
 
     private void listarSeriesBuscadas() {
-        List<Serie> series = new ArrayList<>();
-        series = dadosSeries.stream().map( d -> new Serie(d))
-                        .collect(Collectors.toList());
+
+        series = repositorio.findAll(); // pegando do banco de dados
 
         series.stream()
                         .sorted(Comparator.comparing(Serie::getGenero))
@@ -103,76 +135,7 @@ public class Principal {
         System.out.println();
         System.out.println();
     }
-//
-//
-//       listaTemporadas.forEach(t -> t.episodios().forEach(e -> System.out.println(e.titulo())));
-//
-//       List<dadosEpisodios> dadosEpisodios = listaTemporadas.stream()
-//               .flatMap(t -> t.episodios().stream())
-//               .collect(Collectors.toList());
 
-//        System.out.println("\n Top 5 episódios");
-//        dadosEpisodios.stream()
-//                .filter(e -> !e.avaliacao().equalsIgnoreCase("N/A"))
-//                .sorted(Comparator.comparing(br.com.alura.screenmatch.model.dadosEpisodios::avaliacao).reversed())
-//                .limit(5)
-//                .forEach(System.out::println);
-
-
-//        List<Episodio> episodios = listaTemporadas.stream()
-//                .flatMap(t -> t.episodios().stream()
-//                .map(d -> new Episodio(t.numero(), d)))
-//                .collect(Collectors.toList());
-//
-//                episodios.forEach(System.out::println);
-
-//        System.out.println("Digite um trecho do titulo do espisodio");
-//        var trechoTitulo = sc.nextLine();
-//        Optional<Episodio> episodioBuscado = episodios.stream()
-//                .filter(e -> e.getTitulo().toUpperCase().contains(trechoTitulo.toUpperCase()))
-//                .findFirst();
-//
-//        if(episodioBuscado.isPresent()){
-//            System.out.println("Episodio encotrado!");
-//            System.out.println("Temporada: " + episodioBuscado.get().getTemporada());
-//        } else {
-//            System.out.println("Espisodio não encontrado");
-//        }
-
-
-//        System.out.println("A partir de que ano voce deseja ver os episodios? ");
-//        var ano = sc.nextInt();
-//        sc.nextLine();
-//
-//        LocalDate dataBusca = LocalDate.of(ano, 1, 1);
-//
-//        DateTimeFormatter formatador = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-//
-//        episodios.stream()
-//                .filter(e -> e.getDatalancamento() != null && e.getDatalancamento().isAfter(dataBusca))
-//                .forEach(e -> System.out.println(
-//                        "Temporada: " + e.getTemporada() +
-//                                " - Episodio: " + e.getTitulo() +
-//                                " - Data de lançamento: " + e.getDatalancamento().format(formatador)
-//                ));
-
-//        System.out.println();
-//        System.out.println("Avaliações por temporada");
-//        Map<Integer, Double> avaliacoesPorTemporada = episodios.stream()
-//                .filter(e -> e.getAvaliacao() > 0.0)
-//                .collect(Collectors.groupingBy(Episodio::getTemporada, Collectors.averagingDouble(Episodio::getAvaliacao)));
-//        System.out.println(avaliacoesPorTemporada);
-//
-//
-//        System.out.println();
-//        System.out.println("Avaliações usando metodo DoubleSummaryStatistics");
-//        DoubleSummaryStatistics est = episodios.stream()
-//                .filter(e -> e.getAvaliacao() > 0.0)
-//                .collect(Collectors.summarizingDouble(Episodio::getAvaliacao));
-//        System.out.println("Média: " + est.getAverage());
-//        System.out.println("Melhor episódio: " + est.getMax());
-//        System.out.println("Pior episódio: " + est.getMin());
-//        System.out.println("Quantidade: " + est.getCount());
 
 
 }
