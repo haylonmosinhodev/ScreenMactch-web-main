@@ -41,6 +41,7 @@ public class Principal {
                     1 - Buscar séries
                     2 - Buscar episódios
                     3 - Lista Séries Buscadas
+                    4 - Buscar Série por título
                     
                     0 - Sair                                 
                     """;
@@ -58,6 +59,9 @@ public class Principal {
                     break;
                 case 3:
                     listarSeriesBuscadas();
+                    break;
+                case 4:
+                    buscarSeriePorTitulo();
                     break;
                 case 0:
                     System.out.println("Saindo...");
@@ -87,6 +91,19 @@ public class Principal {
         var json = consumoApi.obterDados(ENDERECO + nomeSerie.replace(" ", "+") + APIKEY);
         dadosSeries dados = conversor.obterDados(json, dadosSeries.class);
         return (dados);
+    }
+
+    private void buscarSeriePorTitulo() {
+        System.out.println("Escolha uma série pelo nome: ");
+        var nomeSerie = sc.nextLine();
+        Optional<Serie> serieBuscada = repositorio.findBytiluloContainingIgnoreCase(nomeSerie);
+
+        if (serieBuscada.isPresent()) {
+            System.out.println("Dados da série: " + serieBuscada.get());
+
+        } else {
+            System.out.println("Série não encontrada!");
+        }
     }
 
     private void buscarEpisodioPorSerie() {
@@ -135,6 +152,8 @@ public class Principal {
         System.out.println();
         System.out.println();
     }
+
+
 
 
 
