@@ -42,6 +42,7 @@ public class Principal {
                     6 - Buscar Top 5 Séries
                     7 - Buscar Séries por Categoria
                     8 - Buscar Séries Por quantidade de temporadas e avaliação mínima
+                    9 - Buscar Episódios por trecho
                     
                     0 - Sair                                 
                     """;
@@ -75,6 +76,9 @@ public class Principal {
                 case 8:
                     buscarSeriesPorQuatTempoAvaliMinima();
                     break;
+                case 9:
+                    buscarEpisodioPorTrecho();
+                    break;
                 case 0:
                     System.out.println("Saindo...");
                     break;
@@ -83,7 +87,6 @@ public class Principal {
             }
         }
     }
-
 
 
     private void buscarSerieWeb() {
@@ -183,7 +186,7 @@ public class Principal {
         var nomeGenero = sc.nextLine();
         Categoria categoria = Categoria.fromPortugues(nomeGenero);
         List<Serie> seriesPorCategoria = repositorio.findByGenero(categoria);
-        System.out.println("Séries por categoria " + nomeGenero );
+        System.out.println("Séries por categoria " + nomeGenero);
         seriesPorCategoria.forEach(System.out::println);
     }
 
@@ -200,9 +203,19 @@ public class Principal {
 
         System.out.println("Séries encontradas");
         seriesPorTemporadaAva.forEach(System.out::println);
-
-
     }
 
 
-}
+        private void buscarEpisodioPorTrecho(){
+            System.out.println("Qual o nome do episódio para busca?");
+            var trechoEpisodio = sc.nextLine();
+            List<Episodio> episodiosEncontrados = repositorio.episodiosPorTrecho(trechoEpisodio);
+            episodiosEncontrados.forEach(e ->
+                    System.out.printf("Série: %s Temporada %s - Episódio %s - %s\n",
+                            e.getSerie().getTilulo(), e.getTemporada(),
+                            e.getNumeroEp(), e.getTitulo()));
+        }
+    }
+
+
+
